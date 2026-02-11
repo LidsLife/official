@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Account • LIDS Life Network</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0b0f19;
+      color: #e7eefc;
+    }
+    header {
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .brand b { font-size: 16px; }
+    .brand span { font-size: 12px; opacity: .7; }
+
+    nav a {
+      color: inherit;
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: 10px;
+      opacity: .85;
+    }
+    nav a:hover {
+      background: rgba(255,255,255,.08);
+      opacity: 1;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: .2px;
+    }
+
+    .hero p {
+      margin: 0;
+      opacity: .8;
+    }
+
+    .actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: inherit;
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,.10);
+    }
+
+    .muted {
+      opacity: .7;
+      font-size: 13px;
+    }
+
+    .field {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+      max-width: 420px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.03);
+      color: #e7eefc;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(134,166,255,.6);
+    }
+
+    footer {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 20px 26px;
+      opacity: .65;
+      font-size: 12px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+  </style>
+
+  <script>
+    // =========================================================
+    // LIDS Life Account Redirect (Session Check)
+    // =========================================================
+    // v0 Session Flag:
+    // Stored in localStorage as: lids_session = "active"
+    //
+    // If active -> account_session.html
+    // Else      -> account_login.html
+    // =========================================================
+
+    (function () {
+      const session = localStorage.getItem("lids_session");
+
+      if (session === "active") {
+        window.location.href = "account_session.html";
+      } else {
+        // Not logged in → stay here (login hub)
+        // Later you can redirect automatically:
+        // window.location.href = "account_login.html";
+      }
+    })();
+  </script>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <b>LIDS Life Network</b>
+      <span>• Access Terminal •</span>
+    </div>
+    <nav>
+      <a href="home.html">Home</a>
+      <a href="account.html">Account</a>
+      <a href="game.html">Game</a>
+      <a href="social.html">Social</a>
+      <a href="data.html">Data</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card hero">
+      <h1>Account Access</h1>
+      <p>
+        Sign in or create a node identity to enter the LIDS Life Network.
+      </p>
+
+      <div class="field">
+        <input type="text" placeholder="Username" disabled />
+        <input type="password" placeholder="Password" disabled />
+        <div class="muted">
+          Status: <code>v0 local-only</code> • Authentication layer coming next.
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="account_login.html">Login</a>
+        <a class="btn" href="account_join.html">Join</a>
+      </div>
+
+      <p class="muted" style="margin-top:12px;">
+        If a session is detected, you will be routed automatically to
+        <code>account_session.html</code>.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 • Hosted on GitHub Pages • LIDS Life Network Account Layer
+  </footer>
+</body>
+</html>
