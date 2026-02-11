@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Data • LIDS Life Network</title>
+
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0b0f19;
+      color: #e7eefc;
+    }
+
+    header {
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .brand b { font-size: 16px; }
+    .brand span { font-size: 12px; opacity: .7; }
+
+    nav a {
+      color: inherit;
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: 10px;
+      opacity: .85;
+    }
+    nav a:hover {
+      background: rgba(255,255,255,.08);
+      opacity: 1;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 20px 40px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      border-radius: 16px;
+    }
+
+    .topbar {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+
+    .titleblock {
+      display: grid;
+      gap: 2px;
+    }
+
+    .titleblock h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: .2px;
+    }
+
+    .muted { opacity: .7; font-size: 12px; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+      opacity: .9;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    /* 3-panel "terminal windows" */
+    .paneGrid {
+      display: grid;
+      grid-template-columns: 280px 1fr 360px;
+      gap: 12px;
+    }
+
+    @media (max-width: 1020px) {
+      .paneGrid { grid-template-columns: 1fr; }
+    }
+
+    .pane {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      overflow: hidden;
+      min-height: 520px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .paneHeader {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .paneHeader b {
+      font-size: 13px;
+      letter-spacing: .2px;
+    }
+
+    .paneBody {
+      padding: 12px 10px 12px 12px;
+      overflow: auto;
+    }
+
+    /* Inputs/buttons */
+    .row { display: flex; gap: 8px; align-items: center; }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.03);
+      color: #e7eefc;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: rgba(134,166,255,.6); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: inherit;
+      text-decoration: none;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .btn:hover { background: rgba(255,255,255,.10); }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    /* Directory tree */
+    .tree { display: grid; gap: 6px; margin-top: 12px; }
+    .treeItem {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      user-select: none;
+      opacity: .92;
+      transition: background .12s ease, border-color .12s ease, transform .06s ease;
+    }
+    .treeItem:hover {
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.18);
+    }
+    .treeItem:active { transform: translateY(1px); }
+
+    .treeItem.active {
+      border-color: rgba(0,255,255,.35);
+      background: rgba(0,255,255,.06);
+    }
+
+    .dot {
+      width: 9px; height: 9px;
+      border-radius: 999px;
+      background: rgba(0,255,255,.85);
+      box-shadow: 0 0 16px rgba(0,255,255,.35);
+      flex: 0 0 auto;
+    }
+
+    .treeText { display: grid; gap: 2px; }
+    .treeText b { font-size: 13px; }
+    .treeText span { font-size: 12px; opacity: .7; }
+
+    /* Result list */
+    .list { display: grid; gap: 8px; }
+    .listItem {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      user-select: none;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .listItem:hover {
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.18);
+    }
+    .listItem.active {
+      border-color: rgba(255,0,255,.30);
+      background: rgba(255,0,255,.06);
+    }
+
+    .listItem b { font-size: 13px; }
+    .listItem .meta { font-size: 12px; opacity: .7; margin-top: 4px; }
+
+    /* Details */
+    .kv {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .kvRow {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      border-radius: 14px;
+    }
+    .kvRow .k { opacity: .7; font-size: 12px; }
+    .kvRow .v { font-size: 12px; word-break: break-word; }
+
+    .note {
+      margin-top: 12px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255,255,255,.16);
+      background: rgba(255,255,255,.02);
+      font-size: 12px;
+      opacity: .8;
+      line-height: 1.35;
+    }
+
+    footer {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 20px 26px;
+      opacity: .65;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <b>LIDS Life Network</b>
+      <span>• Data Node • Public/Local Views •</span>
+    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="account.html">Account</a>
+      <a href="game.html">Game</a>
+      <a href="social.html">Social</a>
+      <a href="data.html">Data</a>
+    </nav>
+  </header>
+
+  <main class="card">
+    <div class="topbar">
+      <div class="titleblock">
+        <h1>Data Directory</h1>
+        <div class="muted">Public-visible data only • No passwords/private secrets • Placeholder (v0)</div>
+      </div>
+      <div class="row">
+        <span class="pill">Scope: <code id="scopeLabel">local</code></span>
+        <button class="btn" onclick="refreshLocal()">Refresh Local</button>
+      </div>
+    </div>
+
+    <div class="paneGrid" style="padding: 12px;">
+      <!-- LEFT: Directory / Search -->
+      <section class="pane">
+        <div class="paneHeader">
+          <b>Directory</b>
+          <span class="muted">Search + scope</span>
+        </div>
+        <div class="paneBody">
+          <div class="row">
+            <input id="q" type="text" placeholder="Search (local v0)..." oninput="renderList()" />
+            <button class="btn" onclick="clearSearch()">Clear</button>
+          </div>
+
+          <div class="tree">
+            <div id="dirLocal" class="treeItem active" onclick="selectScope('local')">
+              <div class="dot"></div>
+              <div class="treeText">
+                <b>local</b>
+                <span>Session-visible data (this device only)</span>
+              </div>
+            </div>
+
+            <!-- Future scopes (disabled placeholders) -->
+            <div class="treeItem" style="opacity:.45; cursor:not-allowed;">
+              <div class="dot" style="background:rgba(255,255,255,.35); box-shadow:none;"></div>
+              <div class="treeText">
+                <b>accounts</b>
+                <span>Coming later (public index + search)</span>
+              </div>
+            </div>
+
+            <div class="treeItem" style="opacity:.45; cursor:not-allowed;">
+              <div class="dot" style="background:rgba(255,255,255,.35); box-shadow:none;"></div>
+              <div class="treeText">
+                <b>leaderboards</b>
+                <span>Coming later</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="note">
+            <b>v0 Rule:</b> This page displays only non-sensitive values. Passwords, secrets, tokens, or private keys should never be stored or shown here.
+          </div>
+        </div>
+      </section>
+
+      <!-- MIDDLE: Results / Hierarchy -->
+      <section class="pane">
+        <div class="paneHeader">
+          <b>Results</b>
+          <span class="muted" id="resultsMeta">0 items</span>
+        </div>
+        <div class="paneBody">
+          <div class="list" id="list"></div>
+
+          <div class="note" id="emptyNote" style="display:none;">
+            No results. Try clearing search, or create a local session via <code>account_join.html</code> (sets <code>lids_session</code>).
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Details -->
+      <section class="pane">
+        <div class="paneHeader">
+          <b>Details</b>
+          <span class="muted">Selected item</span>
+        </div>
+        <div class="paneBody">
+          <div id="detailsTitle" style="font-weight:800; letter-spacing:.2px;">Nothing selected</div>
+          <div class="muted" id="detailsSub" style="margin-top:4px;">Pick an item from Results.</div>
+
+          <div class="kv" id="kv"></div>
+
+          <div class="note">
+            <b>Placeholder Notice:</b> This is the local-only data view. Later we’ll add public account/index search (server-backed) while keeping private fields excluded.
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    © 2026 • Hosted on GitHub Pages • LIDS Life Network Data Layer
+  </footer>
+
+  <script>
+    // =========================================================
+    // LIDS Life Data Node (v0 Placeholder)
+    // - Only shows LOCAL, non-sensitive info
+    // - No passwords/secrets/tokens displayed
+    // =========================================================
+
+    let SCOPE = "local";
+
+    // "Public-safe" local data model (derived from localStorage)
+    // NOTE: We intentionally DO NOT read/print any password-like keys.
+    let localItems = [];
+
+    function safeNowISO() {
+      return new Date().toISOString();
+    }
+
+    function buildLocalItems() {
+      const sessionFlag = localStorage.getItem("lids_session") || "inactive";
+
+      // These are intentionally "safe" fields. You can expand later.
+      // If you add more localStorage keys, only whitelist safe ones here.
+      const whitelisted = {
+        "lids_session": sessionFlag
+      };
+
+      // Basic stats hierarchy (placeholder)
+      const stats = {
+        L: 0, // Luck
+        I: 0, // Intelligence
+        D: 0, // Dexterity
+        S: 0  // Strength
+      };
+
+      // You can optionally persist these later (e.g., lids_stats_json)
+      // For now, keep it placeholder & deterministic.
+      const client = {
+        userAgent: navigator.userAgent,
+        language: navigator.language || "unknown",
+        platform: navigator.platform || "unknown",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"
+      };
+
+      const meta = {
+        scope: "local",
+        updated_at: safeNowISO(),
+        note: "Local-only view. No private secrets displayed."
+      };
+
+      // Flatten into directory-like items
+      localItems = [
+        {
+          id: "local/session",
+          title: "session",
+          path: "local/session",
+          type: "object",
+          summary: "Session state for this browser",
+          data: { active: (sessionFlag === "active"), lids_session: sessionFlag }
+        },
+        {
+          id: "local/stats",
+          title: "stats",
+          path: "local/stats",
+          type: "object",
+          summary: "Player stats (placeholder)",
+          data: stats
+        },
+        {
+          id: "local/client",
+          title: "client",
+          path: "local/client",
+          type: "object",
+          summary: "Browser/client info",
+          data: client
+        },
+        {
+          id: "local/storage_whitelist",
+          title: "storage_whitelist",
+          path: "local/storage_whitelist",
+          type: "object",
+          summary: "Whitelisted local storage keys (safe only)",
+          data: whitelisted
+        },
+        {
+          id: "local/meta",
+          title: "meta",
+          path: "local/meta",
+          type: "object",
+          summary: "Local data node metadata",
+          data: meta
+        }
+      ];
+    }
+
+    function selectScope(scope) {
+      SCOPE = scope;
+      document.getElementById("scopeLabel").textContent = scope;
+
+      // Only local is active in v0
+      document.getElementById("dirLocal").classList.toggle("active", scope === "local");
+
+      clearSelection();
+      renderList();
+    }
+
+    function clearSearch() {
+      document.getElementById("q").value = "";
+      renderList();
+    }
+
+    function refreshLocal() {
+      buildLocalItems();
+      clearSelection();
+      renderList();
+    }
+
+    function renderList() {
+      const q = (document.getElementById("q").value || "").trim().toLowerCase();
+
+      const list = document.getElementById("list");
+      const meta = document.getElementById("resultsMeta");
+      const emptyNote = document.getElementById("emptyNote");
+
+      list.innerHTML = "";
+
+      let items = [];
+      if (SCOPE === "local") items = localItems.slice();
+
+      if (q) {
+        items = items.filter(it =>
+          it.title.toLowerCase().includes(q) ||
+          it.path.toLowerCase().includes(q) ||
+          (it.summary || "").toLowerCase().includes(q)
+        );
+      }
+
+      meta.textContent = `${items.length} item${items.length === 1 ? "" : "s"}`;
+      emptyNote.style.display = items.length ? "none" : "block";
+
+      items.forEach((it) => {
+        const div = document.createElement("div");
+        div.className = "listItem";
+        div.dataset.id = it.id;
+        div.onclick = () => selectItem(it.id);
+
+        div.innerHTML = `
+          <b>${escapeHtml(it.title)}</b>
+          <div class="meta">${escapeHtml(it.path)} • ${escapeHtml(it.type)} • ${escapeHtml(it.summary || "")}</div>
+        `;
+
+        list.appendChild(div);
+      });
+    }
+
+    function selectItem(id) {
+      // highlight
+      document.querySelectorAll(".listItem").forEach(el => {
+        el.classList.toggle("active", el.dataset.id === id);
+      });
+
+      const item = (SCOPE === "local")
+        ? localItems.find(x => x.id === id)
+        : null;
+
+      const title = document.getElementById("detailsTitle");
+      const sub = document.getElementById("detailsSub");
+      const kv = document.getElementById("kv");
+
+      if (!item) {
+        title.textContent = "Nothing selected";
+        sub.textContent = "Pick an item from Results.";
+        kv.innerHTML = "";
+        return;
+      }
+
+      title.textContent = item.path;
+      sub.textContent = item.summary || "";
+
+      kv.innerHTML = "";
+
+      const entries = Object.entries(item.data || {});
+      if (!entries.length) {
+        kv.innerHTML = `<div class="muted">No fields.</div>`;
+        return;
+      }
+
+      entries.forEach(([k, v]) => {
+        const row = document.createElement("div");
+        row.className = "kvRow";
+        row.innerHTML = `
+          <div class="k">${escapeHtml(String(k))}</div>
+          <div class="v">${escapeHtml(formatValue(v))}</div>
+        `;
+        kv.appendChild(row);
+      });
+    }
+
+    function clearSelection() {
+      document.querySelectorAll(".listItem").forEach(el => el.classList.remove("active"));
+      document.getElementById("detailsTitle").textContent = "Nothing selected";
+      document.getElementById("detailsSub").textContent = "Pick an item from Results.";
+      document.getElementById("kv").innerHTML = "";
+    }
+
+    function formatValue(v) {
+      if (v === null) return "null";
+      if (v === undefined) return "undefined";
+      if (typeof v === "string") return v;
+      if (typeof v === "number" || typeof v === "boolean") return String(v);
+      try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // Boot
+    buildLocalItems();
+    renderList();
+
+    // Default selection (optional): auto-select session item
+    selectItem("local/session");
+  </script>
+</body>
+</html>
