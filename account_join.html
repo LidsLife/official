@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Join • LIDS Life Network</title>
+
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0b0f19;
+      color: #e7eefc;
+    }
+
+    header {
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .brand b { font-size: 16px; }
+    .brand span { font-size: 12px; opacity: .7; }
+
+    nav a {
+      color: inherit;
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: 10px;
+      opacity: .85;
+    }
+    nav a:hover {
+      background: rgba(255,255,255,.08);
+      opacity: 1;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    p { margin: 0; opacity: .8; }
+
+    .form {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px;
+      max-width: 440px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.03);
+      color: #e7eefc;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(134,166,255,.6);
+    }
+
+    .actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: inherit;
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,.10);
+    }
+
+    .muted {
+      opacity: .7;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    footer {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 20px 26px;
+      opacity: .65;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <b>LIDS Life Network</b>
+      <span>• Account Join •</span>
+    </div>
+    <nav>
+      <a href="home.html">Home</a>
+      <a href="account.html">Account</a>
+      <a href="game.html">Game</a>
+      <a href="social.html">Social</a>
+      <a href="data.html">Data</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card">
+      <h1>Create Node Identity</h1>
+      <p>
+        Register a local identity for the LIDS Life Network (v0 prototype).
+      </p>
+
+      <div class="form">
+        <input type="text" placeholder="Choose Username" />
+        <input type="password" placeholder="Choose Password" />
+        <input type="password" placeholder="Confirm Password" />
+      </div>
+
+      <div class="actions">
+        <button class="btn" onclick="joinAccount()">Join</button>
+        <a class="btn" href="account.html">Back</a>
+      </div>
+
+      <p class="muted">
+        v0 Note: This is local-only. Clicking Join will activate a test session
+        flag (<code>localStorage</code>) and route you to
+        <code>account_session.html</code>.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 • LIDS Life Network • Join Layer
+  </footer>
+
+  <script>
+    function joinAccount() {
+      // v0 Prototype: activate local session
+      localStorage.setItem("lids_session", "active");
+
+      // Redirect into session page
+      window.location.href = "account_session.html";
+    }
+  </script>
+</body>
+</html>
