@@ -77,25 +77,26 @@
 
     .muted { opacity: .75; font-size: 13px; }
 
-    /* Pixel stage */
-    .stage {
-      width: 100%;
-      display: grid;
-      justify-items: center;
-      gap: 10px;
-    }
-
     canvas {
       width: min(720px, 92vw);
       height: auto;
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,.12);
-      background: radial-gradient(1200px 600px at 50% 30%, rgba(255, 0, 190, .08), transparent 55%),
-                  radial-gradient(900px 500px at 70% 70%, rgba(0, 220, 255, .08), transparent 55%),
-                  rgba(255,255,255,.02);
+
+      /* Tokyo Neon City Glow Background */
+      background:
+        radial-gradient(900px 520px at 50% 30%, rgba(255, 0, 255, .12), transparent 55%),
+        radial-gradient(900px 520px at 20% 70%, rgba(0, 255, 255, .10), transparent 60%),
+        radial-gradient(900px 520px at 80% 75%, rgba(0, 255, 140, .08), transparent 60%),
+        rgba(255,255,255,.02);
+
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 18px 80px rgba(0,0,0,.55);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.06) inset,
+        0 0 25px rgba(255,0,255,.18),
+        0 0 40px rgba(0,255,255,.12),
+        0 18px 80px rgba(0,0,0,.55);
     }
 
     .soon {
@@ -126,7 +127,7 @@
       <span>• Game Node •</span>
     </div>
     <nav>
-      <a href="home.html">Home</a>
+      <a href="index.html">Home</a>
       <a href="account.html">Account</a>
       <a href="game.html">Game</a>
       <a href="social.html">Social</a>
@@ -136,17 +137,15 @@
 
   <main>
     <section class="card hero">
-      <h1>Cube Slime (Cyberpunk Prototype)</h1>
-      <div class="muted">Procedural pixel animation • inflated pixels for dramatic effect</div>
+      <h1>Neon Cube Slime • Tokyo Future Prototype</h1>
+      <div class="muted">Pixel cyberpunk animation • oversized neon glow</div>
 
-      <div class="stage">
-        <!-- Internal resolution stays small; CSS scales it up for big chunky pixels -->
-        <canvas id="slime" width="160" height="96" aria-label="Pixel slime animation"></canvas>
-        <div class="soon">Game coming soon!</div>
-      </div>
+      <canvas id="slime" width="160" height="96"></canvas>
+
+      <div class="soon">Game coming soon!</div>
 
       <div class="muted">
-        Status: <code>v0 visual boot</code> • Next: deterministic sim + content packs
+        Status: <code>v0 neon boot</code> • Next: procedural asset packs + combat sim
       </div>
     </section>
   </main>
@@ -157,117 +156,110 @@
 
   <script>
     const c = document.getElementById("slime");
-    const ctx = c.getContext("2d", { alpha: true });
+    const ctx = c.getContext("2d");
 
-    // Helper: crisp pixel rectangles
     function px(x, y, w, h) {
       ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
     }
 
-    // Palette (cyberpunk-ish)
+    // Tokyo Neon Palette
     const COL = {
-      bg1: "rgba(0,0,0,0)",
-      grid: "rgba(255,255,255,0.05)",
-      neonPink: "rgba(255, 0, 190, 0.85)",
-      neonCyan: "rgba(0, 220, 255, 0.85)",
-      slime: "rgba(80, 255, 170, 0.95)",
-      slimeShadow: "rgba(0, 0, 0, 0.35)",
-      slimeDark: "rgba(30, 180, 120, 0.95)",
-      eye: "rgba(10, 12, 18, 0.95)",
-      eyeGlow: "rgba(255, 255, 255, 0.85)",
-      floor: "rgba(255,255,255,0.08)"
+      grid: "rgba(255,255,255,0.04)",
+
+      neonPink: "rgba(255, 0, 255, 0.95)",
+      neonCyan: "rgba(0, 255, 255, 0.95)",
+      neonGreen: "rgba(0, 255, 140, 0.95)",
+
+      slimeCore: "rgba(0, 255, 200, 0.92)",
+      slimeGlow: "rgba(255, 0, 255, 0.55)",
+      slimeGlow2: "rgba(0, 255, 255, 0.55)",
+
+      shadow: "rgba(0,0,0,0.35)",
+      eye: "rgba(10,12,18,0.95)",
+      eyeGlow: "rgba(255,255,255,0.9)"
     };
 
     let t = 0;
 
     function drawBackground() {
-      // Subtle scanlines + grid
       ctx.clearRect(0, 0, c.width, c.height);
 
-      // Scanlines
-      ctx.globalAlpha = 0.18;
-      ctx.fillStyle = "rgba(255,255,255,0.06)";
-      for (let y = 0; y < c.height; y += 2) px(0, y, c.width, 1);
-      ctx.globalAlpha = 1;
-
-      // Vertical faint grid
-      ctx.fillStyle = COL.grid;
-      for (let x = 0; x < c.width; x += 8) px(x, 0, 1, c.height);
-
-      // Neon corner accents
+      // Neon scanlines
+      ctx.globalAlpha = 0.12;
       ctx.fillStyle = COL.neonPink;
-      ctx.globalAlpha = 0.35;
-      px(6, 8, 22, 1);
-      px(6, 8, 1, 10);
+      for (let y = 0; y < c.height; y += 3) px(0, y, c.width, 1);
 
       ctx.fillStyle = COL.neonCyan;
-      px(c.width - 28, c.height - 10, 22, 1);
-      px(c.width - 7, c.height - 18, 1, 10);
+      for (let y = 1; y < c.height; y += 6) px(0, y, c.width, 1);
+
       ctx.globalAlpha = 1;
 
-      // Floor line
-      ctx.fillStyle = COL.floor;
-      px(0, c.height - 16, c.width, 1);
+      // Grid shimmer
+      ctx.fillStyle = COL.grid;
+      for (let x = 0; x < c.width; x += 8) px(x, 0, 1, c.height);
     }
 
     function drawSlime(cx, baseY, phase) {
-      // Bounce curve
-      const bounce = Math.sin(phase) * 10;               // up/down
-      const squash = Math.max(0, -Math.sin(phase)) * 5;  // squash on landing
+      const bounce = Math.sin(phase) * 10;
+      const squash = Math.max(0, -Math.sin(phase)) * 5;
 
-      const w = 34 + squash;      // wider when squashed
-      const h = 26 - squash;      // shorter when squashed
+      const w = 34 + squash;
+      const h = 26 - squash;
 
       const x = cx - w / 2;
       const y = baseY - h - bounce;
 
-      // Shadow (gets wider when closer to ground)
-      const shadowW = 36 + squash * 2;
-      const shadowH = 6 + squash * 0.4;
-      ctx.fillStyle = COL.slimeShadow;
-      px(cx - shadowW / 2, baseY - 3, shadowW, shadowH);
+      // Shadow
+      ctx.fillStyle = COL.shadow;
+      px(cx - (40 + squash * 2) / 2, baseY - 3, 40 + squash * 2, 6);
 
-      // Body outer
-      ctx.fillStyle = COL.slime;
+      // Outer Glow Layer
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = COL.slimeGlow;
+      px(x - 2, y - 2, w + 4, h + 4);
+
+      ctx.fillStyle = COL.slimeGlow2;
+      px(x - 1, y - 1, w + 2, h + 2);
+      ctx.globalAlpha = 1;
+
+      // Core Body
+      ctx.fillStyle = COL.slimeCore;
       px(x, y, w, h);
 
-      // Bottom shading band
-      ctx.fillStyle = COL.slimeDark;
-      px(x, y + h - 6, w, 6);
-
-      // Neon rim highlight (top)
-      ctx.globalAlpha = 0.55;
+      // Neon Rim Highlights
+      ctx.globalAlpha = 0.75;
       ctx.fillStyle = COL.neonCyan;
       px(x + 2, y + 2, w - 4, 2);
+
+      ctx.fillStyle = COL.neonGreen;
+      px(x + 2, y + h - 3, w - 4, 1);
+
       ctx.globalAlpha = 1;
 
-      // Eyes (shift slightly with bounce)
-      const eyeY = y + 10 + (bounce * 0.12);
-      const eyeX1 = x + w * 0.30;
-      const eyeX2 = x + w * 0.62;
-
+      // Eyes
+      const eyeY = y + 10;
       ctx.fillStyle = COL.eye;
-      px(eyeX1, eyeY, 4, 6);
-      px(eyeX2, eyeY, 4, 6);
+      px(x + w * 0.28, eyeY, 4, 6);
+      px(x + w * 0.62, eyeY, 4, 6);
 
-      // Eye glint
-      ctx.globalAlpha = 0.7;
+      // Eye Glint
+      ctx.globalAlpha = 0.8;
       ctx.fillStyle = COL.eyeGlow;
-      px(eyeX1 + 1, eyeY + 1, 1, 1);
-      px(eyeX2 + 1, eyeY + 1, 1, 1);
+      px(x + w * 0.28 + 1, eyeY + 1, 1, 1);
+      px(x + w * 0.62 + 1, eyeY + 1, 1, 1);
       ctx.globalAlpha = 1;
 
-      // Cyberpunk “aura” pixels
+      // Neon Aura Pixels
       const aura = 0.45 + 0.25 * Math.sin(phase * 2);
       ctx.globalAlpha = aura;
 
       ctx.fillStyle = COL.neonPink;
-      px(x - 3, y + 6, 2, 2);
-      px(x + w + 1, y + 12, 2, 2);
+      px(x - 4, y + 6, 2, 2);
+      px(x + w + 2, y + 12, 2, 2);
 
       ctx.fillStyle = COL.neonCyan;
-      px(x - 2, y + 14, 2, 2);
-      px(x + w + 2, y + 6, 2, 2);
+      px(x - 3, y + 14, 2, 2);
+      px(x + w + 3, y + 6, 2, 2);
 
       ctx.globalAlpha = 1;
     }
@@ -278,7 +270,6 @@
 
       drawBackground();
 
-      // Slight horizontal drift for life
       const cx = c.width / 2 + Math.sin(t / 60) * 6;
       const baseY = c.height - 16;
 
