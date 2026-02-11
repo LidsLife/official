@@ -83,15 +83,16 @@
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,.12);
 
-      /* Tokyo Neon City Glow Background */
+      /* Neon Tokyo-ish backdrop */
       background:
-        radial-gradient(900px 520px at 50% 30%, rgba(255, 0, 255, .12), transparent 55%),
+        radial-gradient(950px 520px at 50% 30%, rgba(255, 0, 255, .12), transparent 55%),
         radial-gradient(900px 520px at 20% 70%, rgba(0, 255, 255, .10), transparent 60%),
         radial-gradient(900px 520px at 80% 75%, rgba(0, 255, 140, .08), transparent 60%),
         rgba(255,255,255,.02);
 
       image-rendering: pixelated;
       image-rendering: crisp-edges;
+
       box-shadow:
         0 0 0 1px rgba(255,255,255,.06) inset,
         0 0 25px rgba(255,0,255,.18),
@@ -137,15 +138,16 @@
 
   <main>
     <section class="card hero">
-      <h1>Neon Cube Slime • Tokyo Future Prototype</h1>
-      <div class="muted">Pixel cyberpunk animation • oversized neon glow</div>
+      <h1>Cube Slime • Outline Sprite (2D → 3D Jump)</h1>
+      <div class="muted">Maple-ish cute face • outline-only • fake 3D bounce via shading + perspective</div>
 
-      <canvas id="slime" width="160" height="96"></canvas>
+      <!-- Low internal res; big CSS scale = dramatic chunky pixels -->
+      <canvas id="slime" width="192" height="112"></canvas>
 
       <div class="soon">Game coming soon!</div>
 
       <div class="muted">
-        Status: <code>v0 neon boot</code> • Next: procedural asset packs + combat sim
+        Status: <code>v0 sprite placeholder</code> • Next: procedural asset packs + combat sim
       </div>
     </section>
   </main>
@@ -162,21 +164,23 @@
       ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
     }
 
-    // Tokyo Neon Palette
     const COL = {
-      grid: "rgba(255,255,255,0.04)",
+      // Tokyo neon accents
+      neonPink: "rgba(255, 0, 255, 0.9)",
+      neonCyan: "rgba(0, 255, 255, 0.9)",
+      neonGreen: "rgba(0, 255, 140, 0.85)",
 
-      neonPink: "rgba(255, 0, 255, 0.95)",
-      neonCyan: "rgba(0, 255, 255, 0.95)",
-      neonGreen: "rgba(0, 255, 140, 0.95)",
+      grid: "rgba(255,255,255,0.035)",
+      scan: "rgba(255,255,255,0.04)",
 
-      slimeCore: "rgba(0, 255, 200, 0.92)",
-      slimeGlow: "rgba(255, 0, 255, 0.55)",
-      slimeGlow2: "rgba(0, 255, 255, 0.55)",
+      // Sprite (outline-only vibe)
+      outline: "rgba(0, 255, 255, 0.95)",  // neon outline
+      outline2: "rgba(255, 0, 255, 0.55)", // glow fringe
+      face: "rgba(230, 245, 255, 0.92)",   // cute face lines
+      eye: "rgba(10, 12, 18, 0.95)",
+      eyeGlint: "rgba(255,255,255,0.85)",
 
-      shadow: "rgba(0,0,0,0.35)",
-      eye: "rgba(10,12,18,0.95)",
-      eyeGlow: "rgba(255,255,255,0.9)"
+      shadow: "rgba(0,0,0,0.40)"
     };
 
     let t = 0;
@@ -185,95 +189,161 @@
       ctx.clearRect(0, 0, c.width, c.height);
 
       // Neon scanlines
-      ctx.globalAlpha = 0.12;
+      ctx.globalAlpha = 0.14;
       ctx.fillStyle = COL.neonPink;
       for (let y = 0; y < c.height; y += 3) px(0, y, c.width, 1);
-
       ctx.fillStyle = COL.neonCyan;
       for (let y = 1; y < c.height; y += 6) px(0, y, c.width, 1);
-
       ctx.globalAlpha = 1;
 
       // Grid shimmer
       ctx.fillStyle = COL.grid;
       for (let x = 0; x < c.width; x += 8) px(x, 0, 1, c.height);
+
+      // Tiny HUD ticks
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = COL.neonCyan;
+      px(8, 10, 22, 1); px(8, 10, 1, 10);
+      ctx.fillStyle = COL.neonPink;
+      px(c.width - 30, c.height - 12, 22, 1); px(c.width - 9, c.height - 20, 1, 10);
+      ctx.globalAlpha = 1;
     }
 
-    function drawSlime(cx, baseY, phase) {
-      const bounce = Math.sin(phase) * 10;
-      const squash = Math.max(0, -Math.sin(phase)) * 5;
+    // Draw a "wireframe" rounded cube using pixel segments (no fill)
+    function drawWireCube(x, y, w, h, depth) {
+      // front face
+      // top edge
+      px(x, y, w, 1);
+      // left edge
+      px(x, y, 1, h);
+      // right edge
+      px(x + w - 1, y, 1, h);
+      // bottom edge
+      px(x, y + h - 1, w, 1);
 
-      const w = 34 + squash;
-      const h = 26 - squash;
+      // back face offset
+      const bx = x + depth;
+      const by = y - depth;
 
-      const x = cx - w / 2;
-      const y = baseY - h - bounce;
+      px(bx, by, w, 1);
+      px(bx, by, 1, h);
+      px(bx + w - 1, by, 1, h);
+      px(bx, by + h - 1, w, 1);
 
-      // Shadow
-      ctx.fillStyle = COL.shadow;
-      px(cx - (40 + squash * 2) / 2, baseY - 3, 40 + squash * 2, 6);
+      // connectors
+      px(x, y, depth + 1, 1);          // top-left connector
+      px(x + w - 1, y, depth + 1, 1);  // top-right connector
+      px(x, y + h - 1, depth + 1, 1);  // bottom-left connector
+      px(x + w - 1, y + h - 1, depth + 1, 1); // bottom-right connector
 
-      // Outer Glow Layer
-      ctx.globalAlpha = 0.55;
-      ctx.fillStyle = COL.slimeGlow;
-      px(x - 2, y - 2, w + 4, h + 4);
+      // diagonal-ish vertical connectors (pixel stairs)
+      for (let i = 0; i < depth; i++) {
+        px(x + i, y - i, 1, 1);
+        px(x + w - 1 + i, y - i, 1, 1);
+        px(x + i, y + h - 1 - i, 1, 1);
+        px(x + w - 1 + i, y + h - 1 - i, 1, 1);
+      }
+    }
 
-      ctx.fillStyle = COL.slimeGlow2;
-      px(x - 1, y - 1, w + 2, h + 2);
-      ctx.globalAlpha = 1;
+    function drawFace(x, y, w, h, depth, squish) {
+      // Place face on the front face slightly lower when airborne (cute bounce)
+      const fx = x + Math.round(w * 0.22);
+      const fy = y + Math.round(h * 0.38);
 
-      // Core Body
-      ctx.fillStyle = COL.slimeCore;
-      px(x, y, w, h);
-
-      // Neon Rim Highlights
-      ctx.globalAlpha = 0.75;
-      ctx.fillStyle = COL.neonCyan;
-      px(x + 2, y + 2, w - 4, 2);
-
-      ctx.fillStyle = COL.neonGreen;
-      px(x + 2, y + h - 3, w - 4, 1);
-
-      ctx.globalAlpha = 1;
-
-      // Eyes
-      const eyeY = y + 10;
+      // eyes (simple Maple-ish dots)
       ctx.fillStyle = COL.eye;
-      px(x + w * 0.28, eyeY, 4, 6);
-      px(x + w * 0.62, eyeY, 4, 6);
+      px(fx, fy, 3, 4);
+      px(fx + Math.round(w * 0.38), fy, 3, 4);
 
-      // Eye Glint
-      ctx.globalAlpha = 0.8;
-      ctx.fillStyle = COL.eyeGlow;
-      px(x + w * 0.28 + 1, eyeY + 1, 1, 1);
-      px(x + w * 0.62 + 1, eyeY + 1, 1, 1);
+      // glints
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = COL.eyeGlint;
+      px(fx + 1, fy + 1, 1, 1);
+      px(fx + Math.round(w * 0.38) + 1, fy + 1, 1, 1);
       ctx.globalAlpha = 1;
 
-      // Neon Aura Pixels
-      const aura = 0.45 + 0.25 * Math.sin(phase * 2);
+      // cute mouth (small curve via pixels)
+      ctx.fillStyle = COL.face;
+      const mx = x + Math.round(w * 0.46);
+      const my = fy + 6 + Math.round(squish * 0.12);
+      px(mx - 2, my, 1, 1);
+      px(mx - 1, my + 1, 1, 1);
+      px(mx,     my + 1, 1, 1);
+      px(mx + 1, my + 1, 1, 1);
+      px(mx + 2, my, 1, 1);
+    }
+
+    function drawSlimeSprite(cx, groundY, phase) {
+      // Bounce: use a sine and then shape it into a jump arc
+      const s = Math.sin(phase);
+      const jump = Math.max(0, s);         // 0..1 (airtime)
+      const fall = Math.max(0, -s);        // 0..1 (impact)
+      const height = jump * 24;            // jump height
+
+      // Squash and stretch
+      const squash = fall * 8;
+      const stretch = jump * 6;
+
+      // "3D" depth scales with height to fake moving toward camera
+      const depth = 6 + Math.round(jump * 5); // deeper when up (feels 3D pop)
+
+      // base cube size
+      const w = 34 + squash - stretch * 0.3;  // slightly wider on impact
+      const h = 26 - squash + stretch;        // taller when airborne
+
+      const x = Math.round(cx - w / 2);
+      const y = Math.round(groundY - h - height);
+
+      // Shadow shrinks when slime is higher (fake depth)
+      const shadowW = 44 - Math.round(jump * 18) + Math.round(squash * 1.2);
+      const shadowH = 7 + Math.round(squash * 0.25);
+      ctx.fillStyle = COL.shadow;
+      px(cx - shadowW / 2, groundY - 4, shadowW, shadowH);
+
+      // Neon glow fringe (outer)
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = COL.outline2;
+      drawWireCube(x - 1, y + 1, w + 2, h + 2, depth); // offset for glow look
+      ctx.globalAlpha = 1;
+
+      // Main outline
+      ctx.fillStyle = COL.outline;
+      drawWireCube(x, y, w, h, depth);
+
+      // Accent edges (Tokyo tech vibe)
+      ctx.globalAlpha = 0.55 + 0.25 * Math.sin(phase * 2);
+      ctx.fillStyle = COL.neonGreen;
+      // top front edge accent
+      px(x + 2, y, Math.max(0, w - 4), 1);
+      // back top edge accent
+      px(x + depth + 2, y - depth, Math.max(0, w - 4), 1);
+      ctx.globalAlpha = 1;
+
+      // Face (eyes + mouth) on front face
+      drawFace(x, y, w, h, depth, squash);
+
+      // Floating neon pixels around it
+      const aura = 0.35 + 0.25 * Math.sin(phase * 2);
       ctx.globalAlpha = aura;
-
       ctx.fillStyle = COL.neonPink;
-      px(x - 4, y + 6, 2, 2);
-      px(x + w + 2, y + 12, 2, 2);
-
+      px(x - 5, y + 8, 2, 2);
+      px(x + w + depth + 4, y + 14, 2, 2);
       ctx.fillStyle = COL.neonCyan;
-      px(x - 3, y + 14, 2, 2);
-      px(x + w + 3, y + 6, 2, 2);
-
+      px(x - 4, y + 16, 2, 2);
+      px(x + w + depth + 5, y + 8, 2, 2);
       ctx.globalAlpha = 1;
     }
 
     function loop() {
       t += 1;
-      const phase = t / 14;
+      const phase = t / 16;
 
       drawBackground();
 
-      const cx = c.width / 2 + Math.sin(t / 60) * 6;
-      const baseY = c.height - 16;
+      const cx = Math.round(c.width / 2 + Math.sin(t / 80) * 10);
+      const groundY = c.height - 18;
 
-      drawSlime(cx, baseY, phase);
+      drawSlimeSprite(cx, groundY, phase);
 
       requestAnimationFrame(loop);
     }
