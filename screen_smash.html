@@ -97,6 +97,7 @@
       white-space:nowrap;
     }
     .btn:hover{ background:rgba(255,255,255,.10); }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; }
 
     /* Game board */
     .boardWrap{
@@ -141,37 +142,36 @@
     .tile:hover{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.18); }
     .tile:active{ transform: translateY(1px) scale(0.99); }
 
+    .tile.disabled{
+      cursor:default;
+      opacity:.45;
+    }
+    .tile.disabled:hover{ background:rgba(255,255,255,.03); border-color:rgba(255,255,255,.12); }
+
     .scan{
       position:absolute; inset:0;
       background: linear-gradient(180deg, rgba(255,255,255,.05), transparent 45%, rgba(255,255,255,.03));
-      opacity:.6;
+      opacity:.55;
       pointer-events:none;
     }
-
-    .label{
-      font-weight:900;
-      letter-spacing:.8px;
-      font-size:12px;
-      opacity:.9;
-      text-transform:uppercase;
-    }
-
-    /* Types */
-    .good { border-color: rgba(0,255,255,.25); box-shadow: 0 0 24px rgba(0,255,255,.10) inset; }
-    .bad  { border-color: rgba(255,0,255,.25); box-shadow: 0 0 24px rgba(255,0,255,.10) inset; }
-    .bonus{ border-color: rgba(0,255,140,.25); box-shadow: 0 0 24px rgba(0,255,140,.10) inset; }
-
-    .good .label { color: rgba(160,255,255,.95); }
-    .bad .label  { color: rgba(255,170,230,.95); }
-    .bonus .label{ color: rgba(170,255,210,.95); }
 
     .fx{
       position:absolute;
       inset:auto 0 0 0;
       height:36%;
       background: radial-gradient(120px 60px at 50% 100%, rgba(255,255,255,.12), transparent 65%);
-      opacity:.75;
+      opacity:.65;
       pointer-events:none;
+    }
+
+    .coinCanvas{
+      width: 84%;
+      height: auto;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      filter:
+        drop-shadow(0 0 10px rgba(0,255,255,.10))
+        drop-shadow(0 0 14px rgba(255,0,255,.10));
     }
 
     .toast{
@@ -213,15 +213,16 @@
       <div class="top">
         <div>
           <h1>Screen Smash</h1>
-          <div class="muted">Smash the safe screens • avoid corrupted screens • catch bonus</div>
+          <div class="muted">Click one tile per round • manage time • score climbs fast</div>
         </div>
 
         <div class="hud">
-          <span class="pill">Wave: <code id="wave">1</code></span>
+          <span class="pill">Round: <code id="round">1</code></span>
+          <span class="pill">Time: <code id="time">5.0</code>s</span>
           <span class="pill">Score: <code id="score">0</code></span>
           <span class="pill">Best: <code id="best">0</code></span>
+          <button class="btn" onclick="startRun()" id="startBtn">Start</button>
           <button class="btn" onclick="resetRun()">Reset</button>
-          <button class="btn" onclick="togglePause()" id="pauseBtn">Pause</button>
         </div>
       </div>
     </section>
@@ -233,176 +234,480 @@
 
     <section class="card">
       <div class="muted">
-        v0 rules: Each wave lights 1 bonus, 1 corrupted, rest safe. Click once per tile. Next wave starts when all tiles are cleared.
+        Rules (v1): Timer starts at <b>5.0s</b>. Click one screen per round: <b>Safe</b> (+0.5s, +1pt), <b>Doom</b> (-1s, +1pt), <b>Bonus</b> (+1s, +2pt).
+        Each round guarantees at least <b>1 Safe</b> and <b>1 Doom</b>. If there is more than 1 Doom, there is a <b>30%</b> chance one Doom becomes Bonus.
       </div>
     </section>
   </main>
 
   <footer>
-    © 2026 • Hosted on GitHub Pages • Screen Smash (v0)
+    © 2026 • Hosted on GitHub Pages • Screen Smash
   </footer>
 
   <script>
-    // =========================
-    // Screen Smash v0 (local)
-    // =========================
+    // =========================================================
+    // Screen Smash (updated mechanics)
+    // - Timer starts at 5.0s, ends when <= 0
+    // - Each round: at least 1 safe + 1 doom
+    // - 30% chance to replace a doom with bonus if doomCount > 1
+    // - Click ONE tile per round; next round spawns immediately after effects
+    // - Tile visuals are animated pixel coins (recolored)
+    // =========================================================
 
     const boardEl = document.getElementById("board");
-    const waveEl = document.getElementById("wave");
+    const roundEl = document.getElementById("round");
+    const timeEl  = document.getElementById("time");
     const scoreEl = document.getElementById("score");
     const bestEl  = document.getElementById("best");
     const toastEl = document.getElementById("toast");
-    const pauseBtn = document.getElementById("pauseBtn");
+    const startBtn = document.getElementById("startBtn");
 
-    const KEY_BEST = "screen_smash_best";
+    const KEY_BEST = "screen_smash_best_v1";
 
-    let wave = 1;
+    const TILE_SAFE  = 1;
+    const TILE_DOOM  = 2;
+    const TILE_BONUS = 3;
+
+    let round = 1;
     let score = 0;
-    let best = Number(localStorage.getItem(KEY_BEST) || 0);
+    let best  = Number(localStorage.getItem(KEY_BEST) || 0);
 
-    let paused = false;
+    // timeRemaining is authoritative
+    let timeRemaining = 5.0;
+    let running = false;
+    let ended = false;
 
-    // Tile state
-    // value: 0=empty/cleared, 1=good, 2=bad, 3=bonus
-    let tiles = new Array(9).fill(0);
+    // round lock (only one click per round)
+    let roundLocked = false;
+
+    // Tile model: array of {type, canvas, ctx, seed}
+    let tiles = [];
+
+    // Timer loop
+    let lastTs = null;
+    function timerLoop(ts) {
+      if (!running || ended) return;
+
+      if (lastTs == null) lastTs = ts;
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+
+      timeRemaining -= dt;
+
+      if (timeRemaining <= 0) {
+        timeRemaining = timeRemaining; // keep as-is (can go negative visually if you want)
+        endGame();
+        return;
+      }
+
+      syncHud();
+      requestAnimationFrame(timerLoop);
+    }
 
     function setToast(msg) {
       toastEl.textContent = msg || "";
     }
 
+    function fmt1(v) {
+      return (Math.round(v * 10) / 10).toFixed(1);
+    }
+
     function syncHud() {
-      waveEl.textContent = wave;
+      roundEl.textContent = round;
+      timeEl.textContent  = fmt1(timeRemaining);
       scoreEl.textContent = score;
-      bestEl.textContent = best;
-      pauseBtn.textContent = paused ? "Resume" : "Pause";
+      bestEl.textContent  = best;
+
+      startBtn.textContent = ended ? "Start" : (running ? "Running" : "Start");
+      startBtn.disabled = running && !ended;
     }
 
     function randInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function genWave() {
-      // Reset tiles to good
-      tiles = new Array(9).fill(1);
-
-      // One corrupted tile
-      const badIdx = randInt(0, 8);
-      tiles[badIdx] = 2;
-
-      // One bonus tile (different)
-      let bonusIdx = randInt(0, 8);
-      while (bonusIdx === badIdx) bonusIdx = randInt(0, 8);
-      tiles[bonusIdx] = 3;
-
-      setToast(`Wave ${wave}: find bonus, avoid corruption.`);
-      render();
-      syncHud();
+    function pickUniqueIndices(n, count) {
+      const idx = [];
+      const used = new Set();
+      while (idx.length < count) {
+        const r = randInt(0, n - 1);
+        if (!used.has(r)) { used.add(r); idx.push(r); }
+      }
+      return idx;
     }
 
-    function tileClass(v) {
-      if (v === 1) return "tile good";
-      if (v === 2) return "tile bad";
-      if (v === 3) return "tile bonus";
-      return "tile";
+    // Difficulty curve (simple): doom count slowly increases
+    function computeDoomCount() {
+      // Keep the game playable: doom grows but never exceeds 8
+      // Round 1-3: 2 doom, then gradually to 5-6
+      const base = 2 + Math.floor((round - 1) / 4);     // +1 every 4 rounds
+      const jitter = randInt(0, 1);                      // small variance
+      const doom = Math.min(8, Math.max(1, base + jitter));
+      return doom;
     }
 
-    function tileLabel(v) {
-      if (v === 1) return "SAFE";
-      if (v === 2) return "CORRUPT";
-      if (v === 3) return "BONUS";
-      return "";
+    function genRoundLayout() {
+      // Create types array length 9
+      const N = 9;
+
+      // Determine doom count, ensure at least 1 safe exists
+      let doomCount = computeDoomCount();
+      if (doomCount > 8) doomCount = 8;
+
+      // Always keep at least 1 safe tile
+      let safeCount = N - doomCount;
+      if (safeCount < 1) {
+        doomCount = 8;
+        safeCount = 1;
+      }
+
+      // 30% chance to spawn bonus by replacing a doom,
+      // but ONLY if doomCount > 1 (as requested)
+      let bonusCount = 0;
+      if (doomCount > 1 && Math.random() < 0.30) {
+        bonusCount = 1;
+        doomCount -= 1;
+      }
+
+      // Now assign indices
+      const types = new Array(N).fill(0);
+
+      // Place safes
+      const safeIdx = pickUniqueIndices(N, safeCount);
+      safeIdx.forEach(i => types[i] = TILE_SAFE);
+
+      // Remaining slots for doom/bonus
+      const remaining = [];
+      for (let i = 0; i < N; i++) if (types[i] === 0) remaining.push(i);
+
+      // Place dooms
+      const doomIdx = pickUniqueIndices(remaining.length, doomCount).map(k => remaining[k]);
+      doomIdx.forEach(i => types[i] = TILE_DOOM);
+
+      // Place bonus (if any) in leftover
+      if (bonusCount === 1) {
+        const leftovers = [];
+        for (let i = 0; i < N; i++) if (types[i] === 0) leftovers.push(i);
+        if (leftovers.length) types[leftovers[randInt(0, leftovers.length - 1)]] = TILE_BONUS;
+      }
+
+      // Safety net: ensure at least 1 safe and 1 doom
+      if (!types.includes(TILE_SAFE)) {
+        types[randInt(0, N - 1)] = TILE_SAFE;
+      }
+      if (!types.includes(TILE_DOOM)) {
+        // convert a safe to doom if needed
+        const s = types.findIndex(v => v === TILE_SAFE);
+        if (s !== -1) types[s] = TILE_DOOM;
+        else types[randInt(0, N - 1)] = TILE_DOOM;
+      }
+
+      return types;
     }
 
-    function render() {
+    function clearBoard() {
       boardEl.innerHTML = "";
-      for (let i = 0; i < 9; i++) {
-        const v = tiles[i];
-        const btn = document.createElement("div");
-        btn.className = tileClass(v);
-        btn.setAttribute("role", "button");
-        btn.setAttribute("tabindex", "0");
+      tiles = [];
+    }
 
-        btn.innerHTML = `
-          <div class="scan"></div>
-          <div class="label">${tileLabel(v)}</div>
-          <div class="fx"></div>
-        `;
+    function buildBoard(types) {
+      clearBoard();
+      for (let i = 0; i < types.length; i++) {
+        const type = types[i];
 
-        btn.onclick = () => clickTile(i);
-        btn.onkeydown = (e) => {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.setAttribute("role", "button");
+        tile.setAttribute("tabindex", "0");
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 48;
+        canvas.height = 48;
+        canvas.className = "coinCanvas";
+
+        const scan = document.createElement("div");
+        scan.className = "scan";
+
+        const fx = document.createElement("div");
+        fx.className = "fx";
+
+        tile.appendChild(scan);
+        tile.appendChild(canvas);
+        tile.appendChild(fx);
+
+        tile.onclick = () => onTileClick(i);
+        tile.onkeydown = (e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            clickTile(i);
+            onTileClick(i);
           }
         };
 
-        // Empty tile visuals
-        if (v === 0) {
-          btn.style.opacity = "0.35";
-          btn.style.cursor = "default";
-          btn.querySelector(".label").textContent = "—";
-        }
+        boardEl.appendChild(tile);
 
-        boardEl.appendChild(btn);
+        tiles.push({
+          type,
+          el: tile,
+          canvas,
+          ctx: canvas.getContext("2d"),
+          seed: Math.random() * 1000
+        });
       }
     }
 
-    function clickTile(i) {
-      if (paused) return;
-      const v = tiles[i];
-      if (v === 0) return;
-
-      // Clear the tile immediately
-      tiles[i] = 0;
-
-      if (v === 1) {
+    function applyTileEffect(type) {
+      // Tile Effects (Impacts on Gameplay)
+      // Safe  = +0.5 Second & 1 Point
+      // Doom  = -1  Second & 1 Point
+      // Bonus = +1  Second & 2 Points
+      if (type === TILE_SAFE) {
+        timeRemaining += 0.5;
         score += 1;
-        setToast("+1 (safe)");
-      } else if (v === 2) {
-        score = Math.max(0, score - 1);
-        setToast("-1 (corrupt)");
-      } else if (v === 3) {
+        setToast("+0.5s, +1pt (Safe)");
+      } else if (type === TILE_DOOM) {
+        timeRemaining -= 1.0;
+        score += 1;
+        setToast("-1.0s, +1pt (Doom)");
+      } else if (type === TILE_BONUS) {
+        timeRemaining += 1.0;
         score += 2;
-        setToast("+2 (bonus!)");
+        setToast("+1.0s, +2pt (Bonus)");
       }
 
       if (score > best) {
         best = score;
         localStorage.setItem(KEY_BEST, String(best));
       }
+    }
 
-      render();
+    function disableTiles() {
+      tiles.forEach(t => t.el.classList.add("disabled"));
+    }
+    function enableTiles() {
+      tiles.forEach(t => t.el.classList.remove("disabled"));
+    }
+
+    function onTileClick(i) {
+      if (!running || ended) return;
+      if (roundLocked) return;
+
+      const tile = tiles[i];
+      if (!tile) return;
+
+      roundLocked = true;
+      disableTiles();
+
+      applyTileEffect(tile.type);
       syncHud();
 
-      // If all cleared → next wave
-      if (tiles.every(x => x === 0)) {
-        wave += 1;
-        // tiny beat before next wave
-        setToast(`Wave cleared. Loading wave ${wave}...`);
-        setTimeout(() => {
-          if (!paused) genWave();
-        }, 350);
+      // End check after effect distribution
+      if (timeRemaining <= 0) {
+        endGame();
+        return;
       }
+
+      // Immediately go to next round after effects
+      round += 1;
+
+      // Short micro-delay for feedback feel (still "immediate")
+      setTimeout(() => {
+        if (ended) return;
+        roundLocked = false;
+        const nextTypes = genRoundLayout();
+        buildBoard(nextTypes);
+        enableTiles();
+        syncHud();
+      }, 120);
+    }
+
+    function startRun() {
+      // Start fresh if ended or not running
+      if (running && !ended) return;
+
+      ended = false;
+      running = true;
+      lastTs = null;
+
+      round = 1;
+      score = 0;
+      timeRemaining = 5.0;
+
+      roundLocked = false;
+      setToast("Go!");
+
+      buildBoard(genRoundLayout());
+      enableTiles();
+      syncHud();
+
+      requestAnimationFrame(timerLoop);
     }
 
     function resetRun() {
-      wave = 1;
+      running = false;
+      ended = false;
+      lastTs = null;
+
+      round = 1;
       score = 0;
-      paused = false;
-      setToast("Reset.");
-      genWave();
+      timeRemaining = 5.0;
+
+      roundLocked = false;
+      setToast("Reset. Press Start.");
+
+      buildBoard(genRoundLayout());
+      disableTiles();
+      syncHud();
     }
 
-    function togglePause() {
-      paused = !paused;
-      setToast(paused ? "Paused." : "Resumed.");
+    function endGame() {
+      ended = true;
+      running = false;
+      roundLocked = true;
+
+      disableTiles();
+
+      // If timer already ran below 0 by a frame, clamp display to 0.0 for cleanliness
+      // (You can remove if you want it to show negative.)
+      if (timeRemaining < 0) timeRemaining = 0;
+
+      setToast(`Time! Final Score: ${score} • Best: ${best}`);
       syncHud();
-      if (!paused && tiles.every(x => x === 0)) genWave();
+
+      // Allow Start again
+      startBtn.disabled = false;
+    }
+
+    // -------------------------
+    // Pixel Coin Renderer
+    // -------------------------
+    // "Same coin design, recolored" => one shared shape, different palettes.
+    const PAL = {
+      safe: {
+        ring:  "rgba(0,255,255,0.92)",
+        glow:  "rgba(0,255,255,0.35)",
+        fill:  "rgba(70,120,255,0.70)",
+        shine: "rgba(220,245,255,0.92)",
+        core:  "rgba(10,12,18,0.55)"
+      },
+      doom: {
+        ring:  "rgba(255,80,110,0.92)",
+        glow:  "rgba(255,0,70,0.30)",
+        fill:  "rgba(255,0,80,0.55)",
+        shine: "rgba(255,225,235,0.92)",
+        core:  "rgba(10,12,18,0.55)"
+      },
+      bonus: {
+        ring:  "rgba(0,255,140,0.92)",
+        glow:  "rgba(0,255,140,0.30)",
+        fill:  "rgba(0,200,120,0.55)",
+        shine: "rgba(230,255,245,0.92)",
+        core:  "rgba(10,12,18,0.55)"
+      }
+    };
+
+    function px(ctx, x, y, w, h) {
+      ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+    }
+
+    function drawCoin(ctx, type, t, seed) {
+      const p = (type === TILE_SAFE) ? PAL.safe : (type === TILE_DOOM) ? PAL.doom : PAL.bonus;
+
+      const W = 48, H = 48;
+      ctx.clearRect(0, 0, W, H);
+
+      // Animate: bob + tiny squish
+      const bob = Math.sin(t * 2 + seed) * 2.0;
+      const squish = Math.max(0, -Math.sin(t * 2 + seed)) * 1.5;
+
+      const cx = 24;
+      const cy = 26 + bob;
+
+      // Shadow
+      ctx.globalAlpha = 0.40;
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      px(ctx, cx - 14 + squish, 38, 28 - squish * 2, 4);
+      ctx.globalAlpha = 1;
+
+      // Outer glow
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = p.glow;
+      for (let i = 0; i < 3; i++) {
+        // simple blur-like ring via expanded outline
+        ring(ctx, cx, cy, 14 + i, 12 + i, p.glow);
+      }
+      ctx.globalAlpha = 1;
+
+      // Ring outline
+      ring(ctx, cx, cy, 14, 12, p.ring);
+
+      // Inner fill
+      fillEllipse(ctx, cx, cy, 12, 10, p.fill);
+
+      // Core dark
+      fillEllipse(ctx, cx, cy, 7, 6, p.core);
+
+      // Shine pixels (top-left)
+      ctx.fillStyle = p.shine;
+      px(ctx, cx - 7, cy - 7, 2, 2);
+      px(ctx, cx - 5, cy - 6, 2, 2);
+      px(ctx, cx - 3, cy - 5, 1, 1);
+
+      // Sparkle drift
+      const sp = 0.45 + 0.35 * Math.sin(t * 3 + seed * 1.7);
+      ctx.globalAlpha = sp;
+      ctx.fillStyle = p.ring;
+      px(ctx, 6, 14 + Math.sin(t * 2 + seed) * 2, 1, 1);
+      px(ctx, 40, 12 + Math.cos(t * 2 + seed) * 2, 1, 1);
+      ctx.globalAlpha = 1;
+    }
+
+    function ring(ctx, cx, cy, rx, ry, color) {
+      ctx.fillStyle = color;
+      // pixel ellipse outline by sampling angles
+      const steps = 64;
+      for (let i = 0; i < steps; i++) {
+        const a = (i / steps) * Math.PI * 2;
+        const x = cx + Math.cos(a) * rx;
+        const y = cy + Math.sin(a) * ry;
+        px(ctx, x, y, 1, 1);
+      }
+      // thicken a touch
+      for (let i = 0; i < steps; i++) {
+        const a = (i / steps) * Math.PI * 2;
+        const x = cx + Math.cos(a) * (rx - 1);
+        const y = cy + Math.sin(a) * (ry - 1);
+        px(ctx, x, y, 1, 1);
+      }
+    }
+
+    function fillEllipse(ctx, cx, cy, rx, ry, color) {
+      ctx.fillStyle = color;
+      for (let y = -ry; y <= ry; y++) {
+        const yy = y / ry;
+        const span = Math.sqrt(Math.max(0, 1 - yy * yy)) * rx;
+        px(ctx, cx - span, cy + y, span * 2, 1);
+      }
+    }
+
+    // Render loop for coins
+    let animStart = null;
+    function coinLoop(ts) {
+      if (animStart == null) animStart = ts;
+      const t = (ts - animStart) / 1000;
+
+      // Draw even if paused/ended so visuals remain alive
+      for (const tile of tiles) {
+        if (!tile) continue;
+        drawCoin(tile.ctx, tile.type, t, tile.seed);
+      }
+
+      requestAnimationFrame(coinLoop);
     }
 
     // Boot
-    syncHud();
-    genWave();
+    bestEl.textContent = best;
+    resetRun();
+    requestAnimationFrame(coinLoop);
   </script>
 </body>
 </html>
