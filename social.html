@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Social • LIDS Life Network</title>
+
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0b0f19;
+      color: #e7eefc;
+    }
+
+    header {
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .brand b { font-size: 16px; }
+    .brand span { font-size: 12px; opacity: .7; }
+
+    nav a {
+      color: inherit;
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: 10px;
+      opacity: .85;
+    }
+    nav a:hover {
+      background: rgba(255,255,255,.08);
+      opacity: 1;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 20px 40px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      border-radius: 16px;
+    }
+
+    .topbar {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+
+    .titleblock {
+      display: grid;
+      gap: 2px;
+    }
+
+    .titleblock h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: .2px;
+    }
+
+    .muted { opacity: .7; font-size: 12px; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+      opacity: .9;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    /* 3-panel layout */
+    .paneGrid {
+      display: grid;
+      grid-template-columns: 280px 1fr 360px;
+      gap: 12px;
+    }
+
+    @media (max-width: 1020px) {
+      .paneGrid { grid-template-columns: 1fr; }
+    }
+
+    .pane {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      overflow: hidden;
+      min-height: 520px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .paneHeader {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .paneHeader b {
+      font-size: 13px;
+      letter-spacing: .2px;
+    }
+
+    .paneBody {
+      padding: 12px 10px 12px 12px;
+      overflow: auto;
+    }
+
+    /* Inputs/buttons */
+    .row { display: flex; gap: 8px; align-items: center; }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.03);
+      color: #e7eefc;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: rgba(134,166,255,.6); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: inherit;
+      text-decoration: none;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .btn:hover { background: rgba(255,255,255,.10); }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    /* Left: directory-like quick filters */
+    .tree { display: grid; gap: 6px; margin-top: 12px; }
+    .treeItem {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      user-select: none;
+      opacity: .92;
+      transition: background .12s ease, border-color .12s ease, transform .06s ease;
+    }
+    .treeItem:hover {
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.18);
+    }
+    .treeItem:active { transform: translateY(1px); }
+
+    .treeItem.active {
+      border-color: rgba(0,255,255,.35);
+      background: rgba(0,255,255,.06);
+    }
+
+    .dot {
+      width: 9px; height: 9px;
+      border-radius: 999px;
+      background: rgba(255,0,255,.85);
+      box-shadow: 0 0 16px rgba(255,0,255,.35);
+      flex: 0 0 auto;
+    }
+
+    .treeText { display: grid; gap: 2px; }
+    .treeText b { font-size: 13px; }
+    .treeText span { font-size: 12px; opacity: .7; }
+
+    /* Middle list */
+    .list { display: grid; gap: 8px; }
+    .listItem {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      user-select: none;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .listItem:hover {
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.18);
+    }
+    .listItem.active {
+      border-color: rgba(0,255,255,.30);
+      background: rgba(0,255,255,.06);
+    }
+
+    .listItem b { font-size: 13px; }
+    .listItem .meta { font-size: 12px; opacity: .7; margin-top: 4px; }
+
+    /* Right details */
+    .kv {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .kvRow {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      border-radius: 14px;
+    }
+    .kvRow .k { opacity: .7; font-size: 12px; }
+    .kvRow .v { font-size: 12px; word-break: break-word; white-space: pre-wrap; }
+
+    .note {
+      margin-top: 12px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255,255,255,.16);
+      background: rgba(255,255,255,.02);
+      font-size: 12px;
+      opacity: .8;
+      line-height: 1.35;
+    }
+
+    footer {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 20px 26px;
+      opacity: .65;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <b>LIDS Life Network</b>
+      <span>• Social Node • Profiles (placeholder) •</span>
+    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="account.html">Account</a>
+      <a href="game.html">Game</a>
+      <a href="social.html">Social</a>
+      <a href="data.html">Data</a>
+    </nav>
+  </header>
+
+  <main class="card">
+    <div class="topbar">
+      <div class="titleblock">
+        <h1>Social Directory</h1>
+        <div class="muted">Profile search + selection + details • Placeholder (v0)</div>
+      </div>
+      <div class="row">
+        <span class="pill">Mode: <code>profiles</code></span>
+        <button class="btn" onclick="reloadDemo()">Reload Demo</button>
+      </div>
+    </div>
+
+    <div class="paneGrid" style="padding: 12px;">
+      <!-- LEFT: Profile Search -->
+      <section class="pane">
+        <div class="paneHeader">
+          <b>Profile Search</b>
+          <span class="muted">filters</span>
+        </div>
+        <div class="paneBody">
+          <div class="row">
+            <input id="q" type="text" placeholder="Search profiles (v0 demo)..." oninput="renderList()" />
+            <button class="btn" onclick="clearSearch()">Clear</button>
+          </div>
+
+          <div class="tree">
+            <div id="filterAll" class="treeItem active" onclick="setFilter('all')">
+              <div class="dot"></div>
+              <div class="treeText">
+                <b>all profiles</b>
+                <span>Demo set (local only)</span>
+              </div>
+            </div>
+
+            <div id="filterLocal" class="treeItem" onclick="setFilter('local')">
+              <div class="dot" style="background:rgba(0,255,255,.85); box-shadow:0 0 16px rgba(0,255,255,.35);"></div>
+              <div class="treeText">
+                <b>local node</b>
+                <span>This device / session</span>
+              </div>
+            </div>
+
+            <div class="treeItem" style="opacity:.45; cursor:not-allowed;">
+              <div class="dot" style="background:rgba(255,255,255,.35); box-shadow:none;"></div>
+              <div class="treeText">
+                <b>global search</b>
+                <span>Coming later (server index)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="note">
+            <b>v0:</b> This is a visual placeholder. Later, Profile Search will query a public index (excluding private data).
+          </div>
+        </div>
+      </section>
+
+      <!-- MIDDLE: Profile Select -->
+      <section class="pane">
+        <div class="paneHeader">
+          <b>Profile Select</b>
+          <span class="muted" id="resultsMeta">0 profiles</span>
+        </div>
+        <div class="paneBody">
+          <div class="list" id="list"></div>
+
+          <div class="note" id="emptyNote" style="display:none;">
+            No profiles match your search/filter.
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Profile Details -->
+      <section class="pane">
+        <div class="paneHeader">
+          <b>Profile Details</b>
+          <span class="muted">selected</span>
+        </div>
+        <div class="paneBody">
+          <div id="detailsTitle" style="font-weight:800; letter-spacing:.2px;">Nothing selected</div>
+          <div class="muted" id="detailsSub" style="margin-top:4px;">Pick a profile from Profile Select.</div>
+
+          <div class="kv" id="kv"></div>
+
+          <div class="note">
+            <b>Later:</b> Add “Friend”, “Message”, “Party Invite”, and shared public stats (never passwords/tokens).
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    © 2026 • Hosted on GitHub Pages • LIDS Life Network Social Layer
+  </footer>
+
+  <script>
+    // =========================================================
+    // LIDS Life Social Node (v0 Placeholder)
+    // - Demo profile list only (local)
+    // - No private info displayed
+    // =========================================================
+
+    let FILTER = "all";
+    let profiles = [];
+
+    function safeNowISO() { return new Date().toISOString(); }
+
+    function buildDemoProfiles() {
+      const sessionFlag = localStorage.getItem("lids_session") || "inactive";
+
+      // Local profile (derived from safe, local-only info)
+      const localProfile = {
+        id: "profile/local",
+        username: (sessionFlag === "active") ? "LocalPlayer" : "GuestNode",
+        tag: "LOCAL",
+        status: (sessionFlag === "active") ? "online" : "offline",
+        bio: "This profile is visible only on this device (v0).",
+        stats_public: { L: 0, I: 0, D: 0, S: 0 },
+        last_seen: safeNowISO()
+      };
+
+      // A few demo “public” profiles (placeholders)
+      profiles = [
+        localProfile,
+        {
+          id: "profile/demo/1",
+          username: "NeonSlime",
+          tag: "DEMO",
+          status: "online",
+          bio: "Tokyo grid runner. Placeholder profile.",
+          stats_public: { L: 7, I: 2, D: 5, S: 3 },
+          last_seen: safeNowISO()
+        },
+        {
+          id: "profile/demo/2",
+          username: "CubeRunner",
+          tag: "DEMO",
+          status: "offline",
+          bio: "Moves like a sprite. Thinks like a system.",
+          stats_public: { L: 3, I: 6, D: 4, S: 2 },
+          last_seen: safeNowISO()
+        },
+        {
+          id: "profile/demo/3",
+          username: "LIDS_Life",
+          tag: "DEMO",
+          status: "online",
+          bio: "One network. Any client. (Demo identity)",
+          stats_public: { L: 5, I: 5, D: 5, S: 5 },
+          last_seen: safeNowISO()
+        }
+      ];
+    }
+
+    function setFilter(f) {
+      FILTER = f;
+      document.getElementById("filterAll").classList.toggle("active", f === "all");
+      document.getElementById("filterLocal").classList.toggle("active", f === "local");
+      clearSelection();
+      renderList();
+    }
+
+    function clearSearch() {
+      document.getElementById("q").value = "";
+      renderList();
+    }
+
+    function reloadDemo() {
+      buildDemoProfiles();
+      clearSelection();
+      renderList();
+      // Default select local profile
+      selectProfile("profile/local");
+    }
+
+    function renderList() {
+      const q = (document.getElementById("q").value || "").trim().toLowerCase();
+
+      let items = profiles.slice();
+
+      if (FILTER === "local") {
+        items = items.filter(p => p.id === "profile/local");
+      }
+
+      if (q) {
+        items = items.filter(p =>
+          p.username.toLowerCase().includes(q) ||
+          p.id.toLowerCase().includes(q) ||
+          (p.bio || "").toLowerCase().includes(q) ||
+          (p.tag || "").toLowerCase().includes(q)
+        );
+      }
+
+      const list = document.getElementById("list");
+      const meta = document.getElementById("resultsMeta");
+      const emptyNote = document.getElementById("emptyNote");
+
+      list.innerHTML = "";
+      meta.textContent = `${items.length} profile${items.length === 1 ? "" : "s"}`;
+      emptyNote.style.display = items.length ? "none" : "block";
+
+      items.forEach((p) => {
+        const div = document.createElement("div");
+        div.className = "listItem";
+        div.dataset.id = p.id;
+        div.onclick = () => selectProfile(p.id);
+
+        const statusDot = p.status === "online"
+          ? `<span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:rgba(0,255,255,.85);box-shadow:0 0 14px rgba(0,255,255,.35);margin-right:6px;"></span>`
+          : `<span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.35);margin-right:6px;"></span>`;
+
+        div.innerHTML = `
+          <b>${statusDot}${escapeHtml(p.username)}</b>
+          <div class="meta">${escapeHtml(p.id)} • ${escapeHtml(p.tag)} • ${escapeHtml(p.status)}</div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function selectProfile(id) {
+      document.querySelectorAll(".listItem").forEach(el => {
+        el.classList.toggle("active", el.dataset.id === id);
+      });
+
+      const p = profiles.find(x => x.id === id);
+
+      const title = document.getElementById("detailsTitle");
+      const sub = document.getElementById("detailsSub");
+      const kv = document.getElementById("kv");
+
+      if (!p) {
+        title.textContent = "Nothing selected";
+        sub.textContent = "Pick a profile from Profile Select.";
+        kv.innerHTML = "";
+        return;
+      }
+
+      title.textContent = p.username;
+      sub.textContent = p.bio || "";
+
+      kv.innerHTML = "";
+      const detailObj = {
+        id: p.id,
+        tag: p.tag,
+        status: p.status,
+        last_seen: p.last_seen,
+        stats_public: p.stats_public
+      };
+
+      Object.entries(detailObj).forEach(([k, v]) => {
+        const row = document.createElement("div");
+        row.className = "kvRow";
+        row.innerHTML = `
+          <div class="k">${escapeHtml(String(k))}</div>
+          <div class="v">${escapeHtml(formatValue(v))}</div>
+        `;
+        kv.appendChild(row);
+      });
+    }
+
+    function clearSelection() {
+      document.querySelectorAll(".listItem").forEach(el => el.classList.remove("active"));
+      document.getElementById("detailsTitle").textContent = "Nothing selected";
+      document.getElementById("detailsSub").textContent = "Pick a profile from Profile Select.";
+      document.getElementById("kv").innerHTML = "";
+    }
+
+    function formatValue(v) {
+      if (v === null) return "null";
+      if (v === undefined) return "undefined";
+      if (typeof v === "string") return v;
+      if (typeof v === "number" || typeof v === "boolean") return String(v);
+      try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // Boot
+    buildDemoProfiles();
+    renderList();
+    selectProfile("profile/local");
+  </script>
+</body>
+</html>
