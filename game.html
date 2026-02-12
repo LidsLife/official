@@ -99,6 +99,28 @@
         0 18px 80px rgba(0,0,0,.55);
     }
 
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 8px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: inherit;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .15s ease, transform .08s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,.10);
+      transform: translateY(-1px);
+    }
+
     .soon {
       margin-top: 6px;
       font-weight: 700;
@@ -142,6 +164,10 @@
 
       <canvas id="slime" width="192" height="112"></canvas>
 
+      <a class="btn" href="screen_smash.html">
+        Screen Smash
+      </a>
+
       <div class="soon">Coming Soon!</div>
 
       <div class="muted">
@@ -184,7 +210,6 @@
     function drawBackground() {
       ctx.clearRect(0, 0, c.width, c.height);
 
-      // Neon scanlines
       ctx.globalAlpha = 0.14;
       ctx.fillStyle = COL.neonPink;
       for (let y = 0; y < c.height; y += 3) px(0, y, c.width, 1);
@@ -192,11 +217,9 @@
       for (let y = 1; y < c.height; y += 6) px(0, y, c.width, 1);
       ctx.globalAlpha = 1;
 
-      // Grid shimmer
       ctx.fillStyle = COL.grid;
       for (let x = 0; x < c.width; x += 8) px(x, 0, 1, c.height);
 
-      // Tiny HUD ticks
       ctx.globalAlpha = 0.35;
       ctx.fillStyle = COL.neonCyan;
       px(8, 10, 22, 1); px(8, 10, 1, 10);
@@ -205,48 +228,30 @@
       ctx.globalAlpha = 1;
     }
 
-    // Slightly-rounded cube outline (pixel-art): clip corners with tiny notches
     function drawRoundedRectOutline(x, y, w, h, r) {
-      // top
       px(x + r, y, w - 2 * r, 1);
-      // bottom
       px(x + r, y + h - 1, w - 2 * r, 1);
-      // left
       px(x, y + r, 1, h - 2 * r);
-      // right
       px(x + w - 1, y + r, 1, h - 2 * r);
 
-      // corner "notches" (barely rounded)
-      // top-left
       px(x + 1, y + 1, 1, 1);
-      // top-right
       px(x + w - 2, y + 1, 1, 1);
-      // bottom-left
       px(x + 1, y + h - 2, 1, 1);
-      // bottom-right
       px(x + w - 2, y + h - 2, 1, 1);
     }
 
     function drawWireCubeRounded(x, y, w, h, depth) {
-      const r = 2; // barely rounded
-
-      // front face
+      const r = 2;
       drawRoundedRectOutline(x, y, w, h, r);
 
-      // back face (offset)
       const bx = x + depth;
       const by = y - depth;
       drawRoundedRectOutline(bx, by, w, h, r);
 
-      // connectors (pixel "stairs" to suggest depth)
       for (let i = 0; i < depth; i++) {
-        // top-left
         px(x + i, y - i, 1, 1);
-        // top-right
         px(x + w - 1 + i, y - i, 1, 1);
-        // bottom-left
         px(x + i, y + h - 1 - i, 1, 1);
-        // bottom-right
         px(x + w - 1 + i, y + h - 1 - i, 1, 1);
       }
     }
@@ -254,11 +259,9 @@
     function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
     function drawFace(x, y, w, h, squish, blinkAmt) {
-      // blinkAmt: 0 = open, 1 = closed
       const fx = x + Math.round(w * 0.24);
       const fy = y + Math.round(h * 0.40);
 
-      // eye size interpolates with blink
       const openH = 4;
       const closedH = 1;
       const eyeH = Math.round(openH + (closedH - openH) * blinkAmt);
@@ -266,12 +269,10 @@
       const eyeW = 3;
       const gap = Math.round(w * 0.36);
 
-      // Eyes
       ctx.fillStyle = COL.eye;
       px(fx, fy, eyeW, eyeH);
       px(fx + gap, fy, eyeW, eyeH);
 
-      // Glints only when mostly open
       if (blinkAmt < 0.55) {
         ctx.globalAlpha = 0.85 * (1 - blinkAmt);
         ctx.fillStyle = COL.eyeGlint;
@@ -280,7 +281,6 @@
         ctx.globalAlpha = 1;
       }
 
-      // Cute mouth (tiny curve)
       ctx.fillStyle = COL.face;
       const mx = x + Math.round(w * 0.50);
       const my = fy + 6 + Math.round(squish * 0.10);
@@ -295,16 +295,13 @@
     function drawSlimeSprite(cx, groundY, phase) {
       const s = Math.sin(phase);
 
-      // airtime/impact
       const jump = Math.max(0, s);
       const fall = Math.max(0, -s);
 
-      // Jump height and squash/stretch
       const height = jump * 24;
       const squash = fall * 8;
       const stretch = jump * 6;
 
-      // Fake "3D pop": depth increases slightly midair
       const depth = 6 + Math.round(jump * 5);
 
       const w = 34 + squash - stretch * 0.3;
@@ -313,40 +310,31 @@
       const x = Math.round(cx - w / 2);
       const y = Math.round(groundY - h - height);
 
-      // Shadow changes with height
       const shadowW = 44 - Math.round(jump * 18) + Math.round(squash * 1.2);
       const shadowH = 7 + Math.round(squash * 0.25);
       ctx.fillStyle = COL.shadow;
       px(cx - shadowW / 2, groundY - 4, shadowW, shadowH);
 
-      // Glow fringe
       ctx.globalAlpha = 0.55;
       ctx.fillStyle = COL.outlineGlow;
       drawWireCubeRounded(x - 1, y + 1, w + 2, h + 2, depth);
       ctx.globalAlpha = 1;
 
-      // Main outline
       ctx.fillStyle = COL.outline;
       drawWireCubeRounded(x, y, w, h, depth);
 
-      // Neon accent edges
       ctx.globalAlpha = 0.55 + 0.25 * Math.sin(phase * 2);
       ctx.fillStyle = COL.neonGreen;
-      px(x + 3, y, Math.max(0, w - 6), 1);                // front top
-      px(x + depth + 3, y - depth, Math.max(0, w - 6), 1);// back top
+      px(x + 3, y, Math.max(0, w - 6), 1);
+      px(x + depth + 3, y - depth, Math.max(0, w - 6), 1);
       ctx.globalAlpha = 1;
 
-      // Blink synced naturally:
-      // - blink slightly at the top of jump (cute)
-      // - blink a bit on impact (squish)
-      // Use two bell curves around jump peak and landing.
-      const peak = clamp(1 - Math.abs(jump - 0.85) / 0.18, 0, 1);   // near peak
-      const impact = clamp(fall / 0.75, 0, 1) * 0.65;              // on landing
-      const blinkAmt = clamp(peak * 0.85 + impact, 0, 1);          // 0..1
+      const peak = clamp(1 - Math.abs(jump - 0.85) / 0.18, 0, 1);
+      const impact = clamp(fall / 0.75, 0, 1) * 0.65;
+      const blinkAmt = clamp(peak * 0.85 + impact, 0, 1);
 
       drawFace(x, y, w, h, squash, blinkAmt);
 
-      // Floating neon pixels around it
       const aura = 0.35 + 0.25 * Math.sin(phase * 2);
       ctx.globalAlpha = aura;
       ctx.fillStyle = COL.neonPink;
