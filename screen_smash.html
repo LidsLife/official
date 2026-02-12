@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Screen Smash • LIDS Life Network</title>
+
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; margin: 0; }
+
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#0b0f19;
+      color:#e7eefc;
+    }
+
+    header{
+      padding:18px 20px;
+      border-bottom:1px solid rgba(255,255,255,.12);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .brand{ display:flex; flex-direction:column; line-height:1.1; }
+    .brand b{ font-size:16px; }
+    .brand span{ font-size:12px; opacity:.7; }
+
+    nav a{
+      color:inherit;
+      text-decoration:none;
+      padding:8px 10px;
+      border-radius:10px;
+      opacity:.85;
+    }
+    nav a:hover{ background:rgba(255,255,255,.08); opacity:1; }
+
+    main{
+      max-width:980px;
+      margin:0 auto;
+      padding:22px 20px 40px;
+      display:grid;
+      gap:14px;
+    }
+
+    .card{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      border-radius:16px;
+      padding:16px;
+    }
+
+    .top{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    h1{ margin:0; font-size:20px; letter-spacing:.2px; }
+    .muted{ opacity:.72; font-size:12px; }
+
+    .hud{
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    }
+
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.05);
+      font-size:12px;
+      user-select:none;
+      white-space:nowrap;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      color:inherit;
+      text-decoration:none;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:800;
+      font-size:13px;
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{ background:rgba(255,255,255,.10); }
+
+    /* Game board */
+    .boardWrap{
+      display:grid;
+      gap:10px;
+      justify-items:center;
+    }
+
+    .board{
+      width:min(640px, 94vw);
+      aspect-ratio: 1 / 1;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background:
+        radial-gradient(900px 520px at 50% 25%, rgba(255,0,255,.10), transparent 55%),
+        radial-gradient(900px 520px at 20% 75%, rgba(0,255,255,.08), transparent 60%),
+        radial-gradient(900px 520px at 80% 80%, rgba(0,255,140,.06), transparent 60%),
+        rgba(255,255,255,.02);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.06) inset,
+        0 18px 80px rgba(0,0,0,.55);
+    }
+
+    .tile{
+      position:relative;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.03);
+      cursor:pointer;
+      user-select:none;
+      overflow:hidden;
+      transform: translateZ(0);
+      transition: transform .06s ease, background .12s ease, border-color .12s ease;
+      display:grid;
+      place-items:center;
+      min-height: 0;
+    }
+    .tile:hover{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.18); }
+    .tile:active{ transform: translateY(1px) scale(0.99); }
+
+    .scan{
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), transparent 45%, rgba(255,255,255,.03));
+      opacity:.6;
+      pointer-events:none;
+    }
+
+    .label{
+      font-weight:900;
+      letter-spacing:.8px;
+      font-size:12px;
+      opacity:.9;
+      text-transform:uppercase;
+    }
+
+    /* Types */
+    .good { border-color: rgba(0,255,255,.25); box-shadow: 0 0 24px rgba(0,255,255,.10) inset; }
+    .bad  { border-color: rgba(255,0,255,.25); box-shadow: 0 0 24px rgba(255,0,255,.10) inset; }
+    .bonus{ border-color: rgba(0,255,140,.25); box-shadow: 0 0 24px rgba(0,255,140,.10) inset; }
+
+    .good .label { color: rgba(160,255,255,.95); }
+    .bad .label  { color: rgba(255,170,230,.95); }
+    .bonus .label{ color: rgba(170,255,210,.95); }
+
+    .fx{
+      position:absolute;
+      inset:auto 0 0 0;
+      height:36%;
+      background: radial-gradient(120px 60px at 50% 100%, rgba(255,255,255,.12), transparent 65%);
+      opacity:.75;
+      pointer-events:none;
+    }
+
+    .toast{
+      min-height: 18px;
+      text-align:center;
+      font-size:12px;
+      opacity:.78;
+    }
+
+    footer{
+      max-width:980px;
+      margin:0 auto;
+      padding:0 20px 26px;
+      opacity:.65;
+      font-size:12px;
+    }
+
+    code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <b>LIDS Life Network</b>
+      <span>• Screen Smash •</span>
+    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="account.html">Account</a>
+      <a href="game.html">Game</a>
+      <a href="social.html">Social</a>
+      <a href="data.html">Data</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="top">
+        <div>
+          <h1>Screen Smash</h1>
+          <div class="muted">Smash the safe screens • avoid corrupted screens • catch bonus</div>
+        </div>
+
+        <div class="hud">
+          <span class="pill">Wave: <code id="wave">1</code></span>
+          <span class="pill">Score: <code id="score">0</code></span>
+          <span class="pill">Best: <code id="best">0</code></span>
+          <button class="btn" onclick="resetRun()">Reset</button>
+          <button class="btn" onclick="togglePause()" id="pauseBtn">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card boardWrap">
+      <div class="board" id="board"></div>
+      <div class="toast" id="toast"></div>
+    </section>
+
+    <section class="card">
+      <div class="muted">
+        v0 rules: Each wave lights 1 bonus, 1 corrupted, rest safe. Click once per tile. Next wave starts when all tiles are cleared.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 • Hosted on GitHub Pages • Screen Smash (v0)
+  </footer>
+
+  <script>
+    // =========================
+    // Screen Smash v0 (local)
+    // =========================
+
+    const boardEl = document.getElementById("board");
+    const waveEl = document.getElementById("wave");
+    const scoreEl = document.getElementById("score");
+    const bestEl  = document.getElementById("best");
+    const toastEl = document.getElementById("toast");
+    const pauseBtn = document.getElementById("pauseBtn");
+
+    const KEY_BEST = "screen_smash_best";
+
+    let wave = 1;
+    let score = 0;
+    let best = Number(localStorage.getItem(KEY_BEST) || 0);
+
+    let paused = false;
+
+    // Tile state
+    // value: 0=empty/cleared, 1=good, 2=bad, 3=bonus
+    let tiles = new Array(9).fill(0);
+
+    function setToast(msg) {
+      toastEl.textContent = msg || "";
+    }
+
+    function syncHud() {
+      waveEl.textContent = wave;
+      scoreEl.textContent = score;
+      bestEl.textContent = best;
+      pauseBtn.textContent = paused ? "Resume" : "Pause";
+    }
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function genWave() {
+      // Reset tiles to good
+      tiles = new Array(9).fill(1);
+
+      // One corrupted tile
+      const badIdx = randInt(0, 8);
+      tiles[badIdx] = 2;
+
+      // One bonus tile (different)
+      let bonusIdx = randInt(0, 8);
+      while (bonusIdx === badIdx) bonusIdx = randInt(0, 8);
+      tiles[bonusIdx] = 3;
+
+      setToast(`Wave ${wave}: find bonus, avoid corruption.`);
+      render();
+      syncHud();
+    }
+
+    function tileClass(v) {
+      if (v === 1) return "tile good";
+      if (v === 2) return "tile bad";
+      if (v === 3) return "tile bonus";
+      return "tile";
+    }
+
+    function tileLabel(v) {
+      if (v === 1) return "SAFE";
+      if (v === 2) return "CORRUPT";
+      if (v === 3) return "BONUS";
+      return "";
+    }
+
+    function render() {
+      boardEl.innerHTML = "";
+      for (let i = 0; i < 9; i++) {
+        const v = tiles[i];
+        const btn = document.createElement("div");
+        btn.className = tileClass(v);
+        btn.setAttribute("role", "button");
+        btn.setAttribute("tabindex", "0");
+
+        btn.innerHTML = `
+          <div class="scan"></div>
+          <div class="label">${tileLabel(v)}</div>
+          <div class="fx"></div>
+        `;
+
+        btn.onclick = () => clickTile(i);
+        btn.onkeydown = (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            clickTile(i);
+          }
+        };
+
+        // Empty tile visuals
+        if (v === 0) {
+          btn.style.opacity = "0.35";
+          btn.style.cursor = "default";
+          btn.querySelector(".label").textContent = "—";
+        }
+
+        boardEl.appendChild(btn);
+      }
+    }
+
+    function clickTile(i) {
+      if (paused) return;
+      const v = tiles[i];
+      if (v === 0) return;
+
+      // Clear the tile immediately
+      tiles[i] = 0;
+
+      if (v === 1) {
+        score += 1;
+        setToast("+1 (safe)");
+      } else if (v === 2) {
+        score = Math.max(0, score - 1);
+        setToast("-1 (corrupt)");
+      } else if (v === 3) {
+        score += 2;
+        setToast("+2 (bonus!)");
+      }
+
+      if (score > best) {
+        best = score;
+        localStorage.setItem(KEY_BEST, String(best));
+      }
+
+      render();
+      syncHud();
+
+      // If all cleared → next wave
+      if (tiles.every(x => x === 0)) {
+        wave += 1;
+        // tiny beat before next wave
+        setToast(`Wave cleared. Loading wave ${wave}...`);
+        setTimeout(() => {
+          if (!paused) genWave();
+        }, 350);
+      }
+    }
+
+    function resetRun() {
+      wave = 1;
+      score = 0;
+      paused = false;
+      setToast("Reset.");
+      genWave();
+    }
+
+    function togglePause() {
+      paused = !paused;
+      setToast(paused ? "Paused." : "Resumed.");
+      syncHud();
+      if (!paused && tiles.every(x => x === 0)) genWave();
+    }
+
+    // Boot
+    syncHud();
+    genWave();
+  </script>
+</body>
+</html>
